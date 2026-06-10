@@ -96,7 +96,7 @@ with tab2:
                 feature_array = np.array([full_feature_row])
                 
                 # 1. Restandardize feature inputs safely using the full 19-column array shape
-                scaled_features = feature_scaler.transform(feature_array)
+                scaled_features = live_scaler.transform(feature_array)
                 
                 # 2. Extract linear predictive point inference
                 predicted_score = lr_model.predict(scaled_features)[0]
