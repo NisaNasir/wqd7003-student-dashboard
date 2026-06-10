@@ -25,7 +25,7 @@ except Exception as e:
 
 # 3. Sidebar Panel Profile
 st.sidebar.markdown("## Deployment Profile")
-st.sidebar.info("This dashboard deploys our final selected Linear Regression (Baseline) baseline model to forecast student performance tracks.")
+st.sidebar.info("This dashboard deploys our final selected Linear Regression baseline model to forecast student performance tracks.")
 st.sidebar.markdown("**Model Performance Metrics:**")
 st.sidebar.markdown("- **R² Variance Explained:** 76.92%")
 st.sidebar.markdown("- **Mean Absolute Error (MAE):** 0.4620")
@@ -45,7 +45,7 @@ with tab1:
         2. **Hours Studied:** Represents the secondary behavioral lever, proving independent home revision strongly updates score profiles.
         3. **Previous Scores:** Highlights historical academic continuity.
         
-        *Operational Strategy:* By selecting Linear Regression (Baseline), educational institutions gain complete parameter transparency—allowing advisors to mathematically pinpoint exactly how shifting an attendance track will impact final performance grades.
+        *Operational Strategy:* By selecting Linear Regression, educational institutions gain complete parameter transparency—allowing advisors to mathematically pinpoint exactly how shifting an attendance track will impact final performance grades.
         """
     )
 
@@ -56,7 +56,7 @@ with tab2:
     with st.form("student_simulator_form"):
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("##### 🏃‍♂️ Student Behavioral Indicators")
+            st.markdown("##### Student Behavioral Indicators")
             attendance = st.slider("Class Attendance Rate (%)", min_value=0, max_value=100, value=85, step=1)
             hours_studied = st.slider("Weekly Independent Study Hours", min_value=0, max_value=40, value=15, step=1)
             previous_scores = st.slider("Previous Academic Exam Score", min_value=0, max_value=100, value=70, step=1)
@@ -78,11 +78,10 @@ with tab2:
             
             try:
                 # DYNAMIC MATRIX FIX: Build a full 19-column array initialized with zeros 
-                # matching the shape expected by your fitted StandardScaler
                 expected_features = 19
                 full_feature_row = np.zeros(expected_features)
                 
-                # Fill the first 8 active numerical slots with your slider parameters
+                # Fill active numerical slots
                 full_feature_row[0] = hours_studied
                 full_feature_row[1] = attendance
                 full_feature_row[2] = parental_map[parental_involvement]
@@ -92,18 +91,17 @@ with tab2:
                 full_feature_row[6] = motivation_map[motivation]
                 full_feature_row[7] = teacher_map[teacher_quality]
                 
-                # Convert to 2D row array shape required by scikit-learn
                 feature_array = np.array([full_feature_row])
                 
-                # 1. Restandardize feature inputs safely using the full 19-column array shape
+                # 1. Restandardize feature inputs safely using the active live_scaler
                 scaled_features = live_scaler.transform(feature_array)
                 
-                # 2. Extract linear predictive point inference
-                predicted_score = lr_model.predict(scaled_features)[0]
+                # 2. Extract linear predictive point inference using the active live_lr model
+                predicted_score = live_lr.predict(scaled_features)[0]
                 predicted_score = max(0.0, min(100.0, float(predicted_score)))
                 
                 st.markdown("---")
-                st.markdown(f"### 🎯 Predicted Final Exam Score: **{predicted_score:.2f} / 100**")
+                st.markdown(f"### Predicted Final Exam Score: **{predicted_score:.2f} / 100**")
                 
                 if predicted_score < 50.0:
                     st.error("🚨 **High Academic Risk:** Simulated metrics fall below passing baselines. Early intervention counseling highly recommended.")
