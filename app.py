@@ -118,7 +118,7 @@ with tab2:
                 st.error(f"Execution Error: Mapping features failed. Details: {e}")
 
 # ==========================================
-# TAB 3: BATCH PROCESSING (UM CALIBRATED)
+# TAB 3: BATCH PROCESSING (UM CALIBRATED & ORDER SORTED)
 # ==========================================
 with tab3:
     st.subheader("📦 Institutional New Batch Operations Engine")
@@ -170,6 +170,16 @@ with tab3:
                 
             df_batch['Risk_Classification'] = df_batch['Predicted_Exam_Score'].apply(classify_risk_um)
             
+            # --- FORCE FIXED ACADEMIC CATEGORICAL SORTING ORDER ---
+            risk_categories = ["Low Risk (>=70)", "Moderate Risk (50-70)", "High Risk (<50)"]
+            df_batch['Risk_Classification'] = pd.Categorical(
+                df_batch['Risk_Classification'], 
+                categories=risk_categories, 
+                ordered=True
+            )
+            # Sort dataframe row representations to reflect clean categorical orders
+            df_batch = df_batch.sort_values('Risk_Classification')
+
             # --- VISUAL ANALYTICS SECTION ---
             st.markdown("#### 📊 Step 2: Cohort Risk Visual Analytics")
             
@@ -186,7 +196,8 @@ with tab3:
             
             with chart_col1:
                 st.markdown("##### 📈 Cohort Risk Breakdown (UM Standards)")
-                risk_counts = df_batch['Risk_Classification'].value_counts().reset_index()
+                # Count matching records and sort by index to preserve Low -> Moderate -> High sequence
+                risk_counts = df_batch['Risk_Classification'].value_counts().reindex(risk_categories).reset_index()
                 risk_counts.columns = ['Risk Level', 'Student Count']
                 st.bar_chart(data=risk_counts, x='Risk Level', y='Student Count', color="#4b7bec")
                 st.caption("Figure 1: Aggregated distribution of student cohorts mapping to UM academic performance risk thresholds.")
