@@ -58,7 +58,7 @@ with tab1:
     )
 
 # ==========================================
-# TAB 2: INDIVIDUAL SIMULATOR (UM CALIBRATED)
+# TAB 2: INDIVIDUAL SIMULATOR
 # ==========================================
 with tab2:
     st.subheader("🕹️ Interactive Student Metric Simulator")
@@ -118,7 +118,7 @@ with tab2:
                 st.error(f"Execution Error: Mapping features failed. Details: {e}")
 
 # ==========================================
-# TAB 3: BATCH PROCESSING (UM CALIBRATED & ORDER SORTED)
+# TAB 3: BATCH PROCESSING (FORCED SORT VERSION)
 # ==========================================
 with tab3:
     st.subheader("📦 Institutional New Batch Operations Engine")
@@ -170,22 +170,15 @@ with tab3:
                 
             df_batch['Risk_Classification'] = df_batch['Predicted_Exam_Score'].apply(classify_risk_um)
             
-            # --- FORCE FIXED ACADEMIC CATEGORICAL SORTING ORDER ---
-            risk_categories = ["Low Risk (>=70)", "Moderate Risk (50-70)", "High Risk (<50)"]
-            df_batch['Risk_Classification'] = pd.Categorical(
-                df_batch['Risk_Classification'], 
-                categories=risk_categories, 
-                ordered=True
-            )
-            # Sort dataframe row representations to reflect clean categorical orders
-            df_batch = df_batch.sort_values('Risk_Classification')
+            # Pre-sort entire data frame by score descending for granular view
+            df_batch = df_batch.sort_values('Predicted_Exam_Score', ascending=False)
 
             # --- VISUAL ANALYTICS SECTION ---
             st.markdown("#### 📊 Step 2: Cohort Risk Visual Analytics")
             
-            high_risk_count = sum(df_batch['Risk_Classification'] == "High Risk (<50)")
-            mod_risk_count = sum(df_batch['Risk_Classification'] == "Moderate Risk (50-70)")
-            low_risk_count = sum(df_batch['Risk_Classification'] == "Low Risk (>=70)")
+            high_risk_count = int(sum(df_batch['Risk_Classification'] == "High Risk (<50)"))
+            mod_risk_count = int(sum(df_batch['Risk_Classification'] == "Moderate Risk (50-70)"))
+            low_risk_count = int(sum(df_batch['Risk_Classification'] == "Low Risk (>=70)"))
             
             m1, m2, m3 = st.columns(3)
             m1.metric("🚨 High Risk (UM Fail Track)", f"{high_risk_count} students")
@@ -196,16 +189,27 @@ with tab3:
             
             with chart_col1:
                 st.markdown("##### 📈 Cohort Risk Breakdown (UM Standards)")
-                # Count matching records and sort by index to preserve Low -> Moderate -> High sequence
-                risk_counts = df_batch['Risk_Classification'].value_counts().reindex(risk_categories).reset_index()
-                risk_counts.columns = ['Risk Level', 'Student Count']
-                st.bar_chart(data=risk_counts, x='Risk Level', y='Student Count', color="#4b7bec")
+                
+                # REVISED BULLETPROOF SORTING: Manually build a dataframe with explicit sorting
+                sorted_summary = pd.DataFrame({
+                    "Student Count": [low_risk_count, mod_risk_count, high_risk_count]
+                }, index=["Low Risk (>=70)", "Moderate Risk (50-70)", "High Risk (<50)"])
+                
+                # Pass the explicit summary matrix directly to Streamlit
+                st.bar_chart(sorted_summary, color="#4b7bec")
                 st.caption("Figure 1: Aggregated distribution of student cohorts mapping to UM academic performance risk thresholds.")
 
             with chart_col2:
                 st.markdown("##### 🔍 Behavioral Driver Mapping (Attendance vs. Study Hours)")
+                
+                # Create a custom copy solely sorted for the scatter color sequence mapping
+                scatter_df = df_batch.copy()
+                risk_order = {"Low Risk (>=70)": 1, "Moderate Risk (50-70)": 2, "High Risk (<50)": 3}
+                scatter_df['sort_key'] = scatter_df['Risk_Classification'].map(risk_order)
+                scatter_df = scatter_df.sort_values('sort_key')
+                
                 st.scatter_chart(
-                    data=df_batch,
+                    data=scatter_df,
                     x='Attendance',
                     y='Hours_Studied',
                     color='Risk_Classification'
