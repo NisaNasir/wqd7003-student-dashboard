@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import io
 
 # 1. Page Configuration
 st.set_page_config(page_title="Student Academic Risk Dashboard", layout="wide", page_icon="🎓")
@@ -24,19 +25,26 @@ except Exception as e:
     st.stop()
 
 # 3. Sidebar Panel Profile
-st.sidebar.markdown("## Deployment Profile")
+st.sidebar.markdown("## 📊 Deployment Profile")
 st.sidebar.info("This dashboard deploys our final selected Linear Regression baseline model to forecast student performance tracks.")
 st.sidebar.markdown("**Model Performance Metrics:**")
 st.sidebar.markdown("- **R² Variance Explained:** 76.92%")
 st.sidebar.markdown("- **Mean Absolute Error (MAE):** 0.4620")
 st.sidebar.markdown("- **Root Mean Squared Error (RMSE):** 1.8061")
 
-# 4. Interface Tabs 
-tab1, tab2 = st.tabs(["Strategic System Insights", "Individual Student Risk Predictor"])
+# 4. Interface Tabs
+tab1, tab2, tab3 = st.tabs([
+    "🎯 Strategic System Insights", 
+    "🔮 Individual Student Risk Predictor", 
+    "📦 Semester Batch Processing & Visual Analytics"
+])
 
+# ==========================================
+# TAB 1: STRATEGIC INSIGHTS
+# ==========================================
 with tab1:
-    st.subheader("System Executive Insights Summary")
-    st.markdown("### Key Operational Findings")
+    st.subheader("📋 System Executive Insights Summary")
+    st.markdown("### 🔑 Key Operational Findings")
     st.markdown(
         """
         Our underlying statistical framework automatically reveals that final student performance is heavily driven by 
@@ -49,20 +57,23 @@ with tab1:
         """
     )
 
+# ==========================================
+# TAB 2: INDIVIDUAL SIMULATOR
+# ==========================================
 with tab2:
-    st.subheader("Interactive Student Metric Simulator")
+    st.subheader("🕹️ Interactive Student Metric Simulator")
     st.write("Modify student behavioral attributes below to simulate an academic profile and calculate estimated exam score values in real time.")
     
     with st.form("student_simulator_form"):
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("##### Student Behavioral Indicators")
+            st.markdown("##### 🏃‍♂️ Student Behavioral Indicators")
             attendance = st.slider("Class Attendance Rate (%)", min_value=0, max_value=100, value=85, step=1)
             hours_studied = st.slider("Weekly Independent Study Hours", min_value=0, max_value=40, value=15, step=1)
             previous_scores = st.slider("Previous Academic Exam Score", min_value=0, max_value=100, value=70, step=1)
             motivation = st.select_slider("Student Motivation Level", options=["Low", "Medium", "High"], value="Medium")
         with col2:
-            st.markdown("##### Institutional Support & Background")
+            st.markdown("##### 🏫 Institutional Support & Background")
             tutoring = st.slider("Weekly Tutoring Sessions Attended", min_value=0, max_value=10, value=2, step=1)
             resources = st.select_slider("Access to Learning Resources", options=["Low", "Medium", "High"], value="Medium")
             parental_involvement = st.select_slider("Parental Engagement Intensity", options=["Low", "Medium", "High"], value="Medium")
@@ -77,11 +88,9 @@ with tab2:
             teacher_map = {"Low": 1, "Medium": 2, "High": 3}
             
             try:
-                # DYNAMIC MATRIX FIX: Build a full 19-column array initialized with zeros 
                 expected_features = 19
                 full_feature_row = np.zeros(expected_features)
                 
-                # Fill active numerical slots
                 full_feature_row[0] = hours_studied
                 full_feature_row[1] = attendance
                 full_feature_row[2] = parental_map[parental_involvement]
@@ -92,16 +101,12 @@ with tab2:
                 full_feature_row[7] = teacher_map[teacher_quality]
                 
                 feature_array = np.array([full_feature_row])
-                
-                # 1. Restandardize feature inputs safely using the active live_scaler
                 scaled_features = live_scaler.transform(feature_array)
-                
-                # 2. Extract linear predictive point inference using the active live_lr model
                 predicted_score = live_lr.predict(scaled_features)[0]
                 predicted_score = max(0.0, min(100.0, float(predicted_score)))
                 
                 st.markdown("---")
-                st.markdown(f"### Predicted Final Exam Score: **{predicted_score:.2f} / 100**")
+                st.markdown(f"### 🎯 Predicted Final Exam Score: **{predicted_score:.2f} / 100**")
                 
                 if predicted_score < 50.0:
                     st.error("🚨 **High Academic Risk:** Simulated metrics fall below passing baselines. Early intervention counseling highly recommended.")
@@ -111,3 +116,126 @@ with tab2:
                     st.success("✨ **High Achievement Track:** Predicted metrics reflect strong subject mastery. Maintain current engagement levels!")
             except Exception as e:
                 st.error(f"Execution Error: Mapping features failed. Details: {e}")
+
+# ==========================================
+# TAB 3: BATCH PROCESSING & VISUAL ANALYTICS
+# ==========================================
+with tab3:
+    st.subheader("📦 Institutional New Batch Operations Engine")
+    st.markdown("Upload entire student cohorts to instantly run bulk risk predictions and generate visual trend analytics.")
+    
+    st.markdown("#### 📥 Step 1: Upload New Semester Student Cohort")
+    uploaded_file = st.file_uploader("Choose a CSV Batch File", type=["csv"])
+    
+    if uploaded_file is not None:
+        try:
+            # Read batch data
+            df_batch = pd.read_csv(uploaded_file)
+            st.success(f"Successfully loaded {len(df_batch)} student rows from the current semester!")
+            
+            # Map qualitative columns automatically for matrix consistency
+            motivation_map = {"Low": 1, "Medium": 2, "High": 3}
+            resource_map = {"Low": 1, "Medium": 2, "High": 3}
+            parental_map = {"Low": 1, "Medium": 2, "High": 3}
+            teacher_map = {"Low": 1, "Medium": 2, "High": 3}
+            
+            h_stud = df_batch['Hours_Studied'] if 'Hours_Studied' in df_batch.columns else df_batch.iloc[:, 0]
+            atten = df_batch['Attendance'] if 'Attendance' in df_batch.columns else df_batch.iloc[:, 1]
+            prev_s = df_batch['Previous_Scores'] if 'Previous_Scores' in df_batch.columns else df_batch.iloc[:, 5]
+            tutoring = df_batch['Tutoring_Sessions'] if 'Tutoring_Sessions' in df_batch.columns else 0
+            
+            mot = df_batch['Motivation_Level'].map(motivation_map).fillna(2) if 'Motivation_Level' in df_batch.columns else 2
+            res = df_batch['Access_to_Resources'].map(resource_map).fillna(2) if 'Access_to_Resources' in df_batch.columns else 2
+            par = df_batch['Parental_Involvement'].map(parental_map).fillna(2) if 'Parental_Involvement' in df_batch.columns else 2
+            tea = df_batch['Teacher_Quality'].map(teacher_map).fillna(2) if 'Teacher_Quality' in df_batch.columns else 2
+            
+            # Reconstruct matrix
+            batch_features = np.zeros((len(df_batch), 19))
+            batch_features[:, 0] = h_stud
+            batch_features[:, 1] = atten
+            batch_features[:, 2] = par
+            batch_features[:, 3] = res
+            batch_features[:, 4] = tutoring
+            batch_features[:, 5] = prev_s
+            batch_features[:, 6] = mot
+            batch_features[:, 7] = tea
+            
+            # Predict
+            scaled_batch = live_scaler.transform(batch_features)
+            predictions = live_lr.predict(scaled_batch)
+            df_batch['Predicted_Exam_Score'] = np.clip(predictions, 0.0, 100.0)
+            
+            def classify_risk(score):
+                if score < 50.0: return "High Risk"
+                elif score < 75.0: return "Moderate Risk"
+                else: return "Low Risk"
+                
+            df_batch['Risk_Classification'] = df_batch['Predicted_Exam_Score'].apply(classify_risk)
+            
+            # --- VISUAL ANALYTICS SECTION ---
+            st.markdown("#### 📊 Step 2: Cohort Risk Visual Analytics")
+            
+            # Summary Metrics Bar
+            high_risk_count = sum(df_batch['Risk_Classification'] == "High Risk")
+            mod_risk_count = sum(df_batch['Risk_Classification'] == "Moderate Risk")
+            low_risk_count = sum(df_batch['Risk_Classification'] == "Low Risk")
+            
+            m1, m2, m3 = st.columns(3)
+            m1.metric("🚨 High Risk Students", f"{high_risk_count} rows")
+            m2.metric("⚠️ Moderate Risk Students", f"{mod_risk_count} rows")
+            m3.metric("✨ Low Risk (Top Achievers)", f"{low_risk_count} rows")
+            
+            # Dual Column Layout for Visual Charts
+            chart_col1, chart_col2 = st.columns(2)
+            
+            with chart_col1:
+                st.markdown("##### 📈 Cohort Risk Breakdown")
+                # Create a simple, clean summary dataframe for a native Streamlit chart
+                risk_counts = df_batch['Risk_Classification'].value_counts().reset_index()
+                risk_counts.columns = ['Risk Level', 'Student Count']
+                st.bar_chart(data=risk_counts, x='Risk Level', y='Student Count', color="#ff4b4b")
+                st.caption("Figure 1: Distribution of academic risk categories across the current uploaded semester batch.")
+
+            with chart_col2:
+                st.markdown("##### 🔍 Behavioral Driver Mapping (Attendance vs. Study Hours)")
+                # Native scatter plot mapping behavioral drivers
+                st.scatter_chart(
+                    data=df_batch,
+                    x='Attendance',
+                    y='Hours_Studied',
+                    color='Risk_Classification'
+                )
+                st.caption("Figure 2: Clusters of students based on their attendance and independent study patterns.")
+            
+            # Data Table & Export Options
+            st.markdown("#### 📋 Step 3: Granular Batch Records Table")
+            st.dataframe(df_batch[['Hours_Studied', 'Attendance', 'Previous_Scores', 'Predicted_Exam_Score', 'Risk_Classification']], use_container_width=True)
+            
+            csv_buffer = io.StringIO()
+            df_batch.to_csv(csv_buffer, index=False)
+            csv_data = csv_buffer.getvalue()
+            
+            st.download_button(
+                label="📥 Export Prediction Report to CSV/Excel",
+                data=csv_data,
+                file_name="semester_batch_risk_predictions.csv",
+                mime="text/csv"
+            )
+            
+        except Exception as e:
+            st.error(f"Batch Processing Error: Please check that your file headers line up correctly. Details: {e}")
+            
+    # Segment B: Retraining pipeline instructions
+    st.markdown("---")
+    st.markdown("#### 🔄 Step 4: End-of-Semester Automated Model Retraining")
+    st.markdown(
+        """
+        **How the Automated Retraining Loop works:**
+        1. Append the new semester data to your historical master dataset (`Master_Student_Performance.csv`).
+        2. Run your connected **Google Colab Notebook Pipeline** from top to bottom.
+        3. The notebook will automatically execute Section 4 (Model Selection), retest all non-linear ensembles against Linear Regression, and pick the fresh math champion.
+        4. Section 6 will automatically write the newly trained `.joblib` model assets over your existing files.
+        5. Push the updated files to GitHub, click **Rerun** on this dashboard, and your system updates instantly without breaking any front-end architecture.
+        """
+    )
+    st.success("🔄 MLOps Pipeline Ready for Next Semester Lifecycle Integration.")
