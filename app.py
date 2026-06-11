@@ -46,7 +46,7 @@ with tab1:
     st.subheader("📋 System Executive Insights Summary")
     st.markdown("### 🔑 Key Operational Findings")
     st.markdown(
-        \"\"\"
+        """
         Our underlying statistical framework automatically reveals that final student performance is heavily driven by 
         **behavioral metrics and active engagement levels** rather than demographic background or fixed socioeconomic characteristics:
         1. **Attendance:** Identified as the absolute primary driver within the underlying dataset. Consistent exposure to the classroom curriculum remains vital.
@@ -54,7 +54,7 @@ with tab1:
         3. **Previous Scores:** Highlights historical academic continuity.
         
         *Operational Strategy:* By selecting Linear Regression, educational institutions gain complete parameter transparency—allowing advisors to mathematically pinpoint exactly how shifting an attendance track will impact final performance grades.
-        \"\"\"
+        """
     )
 
 # ==========================================
@@ -223,13 +223,13 @@ with tab3:
     st.markdown("---")
     st.markdown("#### 🔄 Step 4: End-of-Semester Automated Model Retraining")
     st.markdown(
-        \"\"\"
+        """
         **How the Automated Retraining Loop works:**
         1. Append the new semester data to your historical master dataset (`Master_Student_Performance.csv`).
         2. Run your connected **Google Colab Notebook Pipeline** from top to bottom.
         3. The notebook will automatically execute Section 4 (Model Selection), retest all non-linear ensembles against Linear Regression, and pick the fresh math champion.
         4. Section 6 will automatically write the newly trained `.joblib` model assets over your existing files.
         5. Push the updated files to GitHub, click **Rerun** on this dashboard, and your system updates instantly without breaking any front-end architecture.
-        \"\"\"
+        """
     )
     st.success("🔄 MLOps Pipeline Ready for Next Semester Lifecycle Integration.")
