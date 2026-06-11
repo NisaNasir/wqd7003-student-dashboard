@@ -26,7 +26,7 @@ except Exception as e:
 
 # 3. Sidebar Panel Profile
 st.sidebar.markdown("## 📊 Deployment Profile")
-st.sidebar.info("This dashboard deploys our final selected Linear Regression baseline model to forecast student performance tracks.")
+st.sidebar.info("This dashboard deploys our final selected Linear Regression baseline model calibrated to the official Universiti Malaya grading structure.")
 st.sidebar.markdown("**Model Performance Metrics:**")
 st.sidebar.markdown("- **R² Variance Explained:** 76.92%")
 st.sidebar.markdown("- **Mean Absolute Error (MAE):** 0.4620")
@@ -46,7 +46,7 @@ with tab1:
     st.subheader("📋 System Executive Insights Summary")
     st.markdown("### 🔑 Key Operational Findings")
     st.markdown(
-        """
+        \"\"\"
         Our underlying statistical framework automatically reveals that final student performance is heavily driven by 
         **behavioral metrics and active engagement levels** rather than demographic background or fixed socioeconomic characteristics:
         1. **Attendance:** Identified as the absolute primary driver within the underlying dataset. Consistent exposure to the classroom curriculum remains vital.
@@ -54,11 +54,11 @@ with tab1:
         3. **Previous Scores:** Highlights historical academic continuity.
         
         *Operational Strategy:* By selecting Linear Regression, educational institutions gain complete parameter transparency—allowing advisors to mathematically pinpoint exactly how shifting an attendance track will impact final performance grades.
-        """
+        \"\"\"
     )
 
 # ==========================================
-# TAB 2: INDIVIDUAL SIMULATOR
+# TAB 2: INDIVIDUAL SIMULATOR (UM CALIBRATED)
 # ==========================================
 with tab2:
     st.subheader("🕹️ Interactive Student Metric Simulator")
@@ -109,31 +109,29 @@ with tab2:
                 st.markdown(f"### 🎯 Predicted Final Exam Score: **{predicted_score:.2f} / 100**")
                 
                 if predicted_score < 50.0:
-                    st.error("🚨 **High Academic Risk:** Simulated metrics fall below passing baselines. Early intervention counseling highly recommended.")
-                elif predicted_score < 75.0:
-                    st.warning("⚠️ **Moderate Performance Baseline:** Pass thresholds satisfied. Monitor closely to prevent potential grade drift.")
+                    st.error("🚨 **High Academic Risk (UM Fail Track):** Predicted metrics fall into the C- to F grade band. Immediate structural intervention highly recommended.")
+                elif predicted_score < 70.0:
+                    st.warning("⚠️ **Moderate Performance Baseline (UM Pass/Good Track):** Predicted metrics fall into the C to B grade band. Progress stable, monitor closely to prevent down-drifts.")
                 else:
-                    st.success("✨ **High Achievement Track:** Predicted metrics reflect strong subject mastery. Maintain current engagement levels!")
+                    st.success("✨ **Low Risk / High Achievement Track (UM Distinction Track):** Predicted metrics reflect strong performance trending in the B+ to A- tier. Maintain current metrics!")
             except Exception as e:
                 st.error(f"Execution Error: Mapping features failed. Details: {e}")
 
 # ==========================================
-# TAB 3: BATCH PROCESSING & VISUAL ANALYTICS
+# TAB 3: BATCH PROCESSING (UM CALIBRATED)
 # ==========================================
 with tab3:
     st.subheader("📦 Institutional New Batch Operations Engine")
-    st.markdown("Upload entire student cohorts to instantly run bulk risk predictions and generate visual trend analytics.")
+    st.markdown("Upload entire student cohorts to instantly run bulk risk predictions based on the official UM grading guidelines.")
     
     st.markdown("#### 📥 Step 1: Upload New Semester Student Cohort")
     uploaded_file = st.file_uploader("Choose a CSV Batch File", type=["csv"])
     
     if uploaded_file is not None:
         try:
-            # Read batch data
             df_batch = pd.read_csv(uploaded_file)
             st.success(f"Successfully loaded {len(df_batch)} student rows from the current semester!")
             
-            # Map qualitative columns automatically for matrix consistency
             motivation_map = {"Low": 1, "Medium": 2, "High": 3}
             resource_map = {"Low": 1, "Medium": 2, "High": 3}
             parental_map = {"Low": 1, "Medium": 2, "High": 3}
@@ -165,49 +163,45 @@ with tab3:
             predictions = live_lr.predict(scaled_batch)
             df_batch['Predicted_Exam_Score'] = np.clip(predictions, 0.0, 100.0)
             
-            def classify_risk(score):
-                if score < 50.0: return "High Risk"
-                elif score < 75.0: return "Moderate Risk"
-                else: return "Low Risk"
+            def classify_risk_um(score):
+                if score < 50.0: return "High Risk (<50)"
+                elif score < 70.0: return "Moderate Risk (50-70)"
+                else: return "Low Risk (>=70)"
                 
-            df_batch['Risk_Classification'] = df_batch['Predicted_Exam_Score'].apply(classify_risk)
+            df_batch['Risk_Classification'] = df_batch['Predicted_Exam_Score'].apply(classify_risk_um)
             
             # --- VISUAL ANALYTICS SECTION ---
             st.markdown("#### 📊 Step 2: Cohort Risk Visual Analytics")
             
-            # Summary Metrics Bar
-            high_risk_count = sum(df_batch['Risk_Classification'] == "High Risk")
-            mod_risk_count = sum(df_batch['Risk_Classification'] == "Moderate Risk")
-            low_risk_count = sum(df_batch['Risk_Classification'] == "Low Risk")
+            high_risk_count = sum(df_batch['Risk_Classification'] == "High Risk (<50)")
+            mod_risk_count = sum(df_batch['Risk_Classification'] == "Moderate Risk (50-70)")
+            low_risk_count = sum(df_batch['Risk_Classification'] == "Low Risk (>=70)")
             
             m1, m2, m3 = st.columns(3)
-            m1.metric("🚨 High Risk Students", f"{high_risk_count} rows")
-            m2.metric("⚠️ Moderate Risk Students", f"{mod_risk_count} rows")
-            m3.metric("✨ Low Risk (Top Achievers)", f"{low_risk_count} rows")
+            m1.metric("🚨 High Risk (UM Fail Track)", f"{high_risk_count} students")
+            m2.metric("⚠️ Moderate Risk (UM Pass/Good Track)", f"{mod_risk_count} students")
+            m3.metric("✨ Low Risk (UM Distinction Track)", f"{low_risk_count} students")
             
-            # Dual Column Layout for Visual Charts
             chart_col1, chart_col2 = st.columns(2)
             
             with chart_col1:
-                st.markdown("##### 📈 Cohort Risk Breakdown")
-                # Create a simple, clean summary dataframe for a native Streamlit chart
+                st.markdown("##### 📈 Cohort Risk Breakdown (UM Standards)")
                 risk_counts = df_batch['Risk_Classification'].value_counts().reset_index()
                 risk_counts.columns = ['Risk Level', 'Student Count']
-                st.bar_chart(data=risk_counts, x='Risk Level', y='Student Count', color="#ff4b4b")
-                st.caption("Figure 1: Distribution of academic risk categories across the current uploaded semester batch.")
+                st.bar_chart(data=risk_counts, x='Risk Level', y='Student Count', color="#4b7bec")
+                st.caption("Figure 1: Aggregated distribution of student cohorts mapping to UM academic performance risk thresholds.")
 
             with chart_col2:
                 st.markdown("##### 🔍 Behavioral Driver Mapping (Attendance vs. Study Hours)")
-                # Native scatter plot mapping behavioral drivers
                 st.scatter_chart(
                     data=df_batch,
                     x='Attendance',
                     y='Hours_Studied',
                     color='Risk_Classification'
                 )
-                st.caption("Figure 2: Clusters of students based on their attendance and independent study patterns.")
+                st.caption("Figure 2: Multi-dimensional clusters segmenting student status directly across primary behavioral variables.")
             
-            # Data Table & Export Options
+            # Data Table
             st.markdown("#### 📋 Step 3: Granular Batch Records Table")
             st.dataframe(df_batch[['Hours_Studied', 'Attendance', 'Previous_Scores', 'Predicted_Exam_Score', 'Risk_Classification']], use_container_width=True)
             
@@ -218,7 +212,7 @@ with tab3:
             st.download_button(
                 label="📥 Export Prediction Report to CSV/Excel",
                 data=csv_data,
-                file_name="semester_batch_risk_predictions.csv",
+                file_name="um_semester_batch_predictions.csv",
                 mime="text/csv"
             )
             
@@ -229,13 +223,13 @@ with tab3:
     st.markdown("---")
     st.markdown("#### 🔄 Step 4: End-of-Semester Automated Model Retraining")
     st.markdown(
-        """
+        \"\"\"
         **How the Automated Retraining Loop works:**
         1. Append the new semester data to your historical master dataset (`Master_Student_Performance.csv`).
         2. Run your connected **Google Colab Notebook Pipeline** from top to bottom.
         3. The notebook will automatically execute Section 4 (Model Selection), retest all non-linear ensembles against Linear Regression, and pick the fresh math champion.
         4. Section 6 will automatically write the newly trained `.joblib` model assets over your existing files.
         5. Push the updated files to GitHub, click **Rerun** on this dashboard, and your system updates instantly without breaking any front-end architecture.
-        """
+        \"\"\"
     )
     st.success("🔄 MLOps Pipeline Ready for Next Semester Lifecycle Integration.")
