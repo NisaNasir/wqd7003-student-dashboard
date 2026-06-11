@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import joblib
 import io
+import plotly.express as px
 
 # 1. Page Configuration
 st.set_page_config(page_title="Student Academic Risk Dashboard", layout="wide", page_icon="🎓")
@@ -118,7 +119,7 @@ with tab2:
                 st.error(f"Execution Error: Mapping features failed. Details: {e}")
 
 # ==========================================
-# TAB 3: BATCH PROCESSING (FORCED SORT VERSION)
+# TAB 3: BATCH PROCESSING (PLOTLY SORT FIXED)
 # ==========================================
 with tab3:
     st.subheader("📦 Institutional New Batch Operations Engine")
@@ -170,7 +171,7 @@ with tab3:
                 
             df_batch['Risk_Classification'] = df_batch['Predicted_Exam_Score'].apply(classify_risk_um)
             
-            # Pre-sort entire data frame by score descending for granular view
+            # Pre-sort entire dataframe by score descending for granular view
             df_batch = df_batch.sort_values('Predicted_Exam_Score', ascending=False)
 
             # --- VISUAL ANALYTICS SECTION ---
@@ -186,34 +187,47 @@ with tab3:
             m3.metric("✨ Low Risk (UM Distinction Track)", f"{low_risk_count} students")
             
             chart_col1, chart_col2 = st.columns(2)
+            academic_order = ["Low Risk (>=70)", "Moderate Risk (50-70)", "High Risk (<50)"]
             
             with chart_col1:
                 st.markdown("##### 📈 Cohort Risk Breakdown (UM Standards)")
-                
-                # REVISED BULLETPROOF SORTING: Manually build a dataframe with explicit sorting
-                sorted_summary = pd.DataFrame({
+                summary_df = pd.DataFrame({
+                    "Risk Level": academic_order,
                     "Student Count": [low_risk_count, mod_risk_count, high_risk_count]
-                }, index=["Low Risk (>=70)", "Moderate Risk (50-70)", "High Risk (<50)"])
+                })
                 
-                # Pass the explicit summary matrix directly to Streamlit
-                st.bar_chart(sorted_summary, color="#4b7bec")
+                fig_bar = px.bar(
+                    summary_df, 
+                    x="Risk Level", 
+                    y="Student Count",
+                    color="Risk Level",
+                    category_orders={"Risk Level": academic_order},
+                    color_discrete_map={
+                        "Low Risk (>=70)": "#2ecc71",
+                        "Moderate Risk (50-70)": "#f1c40f",
+                        "High Risk (<50)": "#e74c3c"
+                    }
+                )
+                fig_bar.update_layout(showlegend=False, margin=dict(l=20, r=20, t=20, b=20))
+                st.plotly_chart(fig_bar, use_container_width=True)
                 st.caption("Figure 1: Aggregated distribution of student cohorts mapping to UM academic performance risk thresholds.")
 
             with chart_col2:
                 st.markdown("##### 🔍 Behavioral Driver Mapping (Attendance vs. Study Hours)")
-                
-                # Create a custom copy solely sorted for the scatter color sequence mapping
-                scatter_df = df_batch.copy()
-                risk_order = {"Low Risk (>=70)": 1, "Moderate Risk (50-70)": 2, "High Risk (<50)": 3}
-                scatter_df['sort_key'] = scatter_df['Risk_Classification'].map(risk_order)
-                scatter_df = scatter_df.sort_values('sort_key')
-                
-                st.scatter_chart(
-                    data=scatter_df,
-                    x='Attendance',
-                    y='Hours_Studied',
-                    color='Risk_Classification'
+                fig_scatter = px.scatter(
+                    df_batch,
+                    x="Attendance",
+                    y="Hours_Studied",
+                    color="Risk_Classification",
+                    category_orders={"Risk_Classification": academic_order},
+                    color_discrete_map={
+                        "Low Risk (>=70)": "#2ecc71",
+                        "Moderate Risk (50-70)": "#f1c40f",
+                        "High Risk (<50)": "#e74c3c"
+                    }
                 )
+                fig_scatter.update_layout(margin=dict(l=20, r=20, t=20, b=20), legend_title_text='Risk Classification')
+                st.plotly_chart(fig_scatter, use_container_width=True)
                 st.caption("Figure 2: Multi-dimensional clusters segmenting student status directly across primary behavioral variables.")
             
             # Data Table
